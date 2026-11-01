@@ -2,6 +2,8 @@ from datetime import datetime, timezone
 from typing import Optional, List
 from sqlmodel import SQLModel, Field, Relationship
 
+from app.core.encryption import EncryptedString
+
 
 def get_utc_now() -> datetime:
     """현재 UTC 시간 반환 (타임존 포함)"""
@@ -28,7 +30,7 @@ class Message(SQLModel, table=True):
     id: str = Field(default=None, primary_key=True)
     session_id: str = Field(foreign_key="session.id", index=True)
     role: str = Field(...)  # 'user' | 'assistant' | 'system'
-    content: str = Field(...)
+    content: str = Field(..., sa_type=EncryptedString)
     model_name: Optional[str] = Field(default=None)
     created_at: datetime = Field(default_factory=get_utc_now)
 

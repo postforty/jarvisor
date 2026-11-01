@@ -11,6 +11,7 @@ htmlcov/
 # Environment & DB
 .env
 *.db
+*.db.bak
 *.sqlite3
 
 # OS files

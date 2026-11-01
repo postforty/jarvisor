@@ -207,6 +207,7 @@ name = "api"
 version = "0.1.0"
 source = { editable = "." }
 dependencies = [
+    { name = "cryptography" },
     { name = "faiss-cpu" },
     { name = "fastapi" },
     { name = "google-genai" },
@@ -231,6 +232,7 @@ dev = [
 
 [package.metadata]
 requires-dist = [
+    { name = "cryptography", specifier = ">=50.0.2" },
     { name = "faiss-cpu", specifier = ">=1.15.1" },
     { name = "fastapi", specifier = ">=0.162.0" },
     { name = "google-genai", specifier = ">=2.33.0" },

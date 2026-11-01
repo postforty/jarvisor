@@ -23,6 +23,7 @@ __pycache__/
 # Environment variables & DB
 .env
 *.db
+*.db.bak
 *.sqlite3
 test_jarvisor.db
 test_javisor.db

@@ -27,6 +27,9 @@ class Settings(BaseSettings):
     # 데이터베이스 설정
     DATABASE_URL: str = "sqlite:///./jarvisor.db"
 
+    # 대화 내용 암호화 키 (Fernet 32바이트 urlsafe base64 또는 임의의 시크릿 문자열)
+    CHAT_ENCRYPTION_KEY: str = ""
+
     # RAG 문서 및 로컬 FAISS 설정
     PDF_DOCUMENT_PATH: str = "../../workspace/documents/hr_regulations.pdf"
     FAISS_INDEX_DIR: str = "./storage/faiss_hr"
