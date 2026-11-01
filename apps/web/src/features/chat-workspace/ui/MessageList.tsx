@@ -19,7 +19,7 @@ export const MessageList: React.FC<MessageListProps> = ({
   messages,
   isGenerating,
   isDelayed = false,
-  currentModel = 'gemini-3.8-flash',
+  currentModel = 'gemini-3.1-flash-lite',
   onSwitchModel,
   onDismissDelay,
 }) => {
@@ -61,7 +61,13 @@ export const MessageList: React.FC<MessageListProps> = ({
               </span>
               {!isUser && msg.model && (
                 <span className="font-mono text-[9px] px-1.5 py-0.2 rounded bg-[#171b26] text-[#4cd7f6] border border-[#4cd7f6]/30">
-                  {msg.model === 'gemini-3.8-flash' ? 'QUANTUM' : 'LITE'}
+                  {msg.model.includes('3.1-flash')
+                    ? '3.1 FLASH-LITE'
+                    : msg.model.includes('3.5-flash')
+                    ? '3.5 LITE'
+                    : msg.model.includes('llama')
+                    ? 'LLAMA'
+                    : 'CORE'}
                 </span>
               )}
               <span className="font-mono text-[10px] text-slate-500">{msg.timestamp}</span>

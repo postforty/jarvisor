@@ -13,7 +13,7 @@ class Session(SQLModel, table=True):
     id: str = Field(default=None, primary_key=True)
     title: str = Field(default="새로운 작전 회의")
     summary: Optional[str] = Field(default=None)
-    model_name: str = Field(default="gemini-3.8-flash")
+    model_name: str = Field(default="gemini-3.1-flash-lite")
     is_pinned: bool = Field(default=False)
     is_archived: bool = Field(default=False)
     created_at: datetime = Field(default_factory=get_utc_now)

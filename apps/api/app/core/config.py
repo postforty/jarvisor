@@ -16,7 +16,7 @@ class Settings(BaseSettings):
 
     # Gemini LLM 모델 설정
     GEMINI_API_KEY: str = ""
-    GEMINI_DEFAULT_MODEL: str = "gemini-3.8-flash"
+    GEMINI_DEFAULT_MODEL: str = "gemini-3.1-flash-lite"
     GEMINI_FAST_MODEL: str = "gemini-3.5-flash-lite"
 
     # Cloudflare Workers AI 모델 설정
@@ -26,6 +26,12 @@ class Settings(BaseSettings):
 
     # 데이터베이스 설정
     DATABASE_URL: str = "sqlite:///./jarvisor.db"
+
+    # RAG 문서 및 로컬 FAISS 설정
+    PDF_DOCUMENT_PATH: str = "../../workspace/documents/hr_regulations.pdf"
+    FAISS_INDEX_DIR: str = "./storage/faiss_hr"
+    EMBEDDING_MODEL: str = "models/gemini-embedding-2"
+    EMBEDDING_DIMENSION: int = 768
 
     # CORS 허용 도메인 목록
     CORS_ORIGINS: List[str] = [

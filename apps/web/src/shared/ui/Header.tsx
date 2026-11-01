@@ -13,9 +13,19 @@ interface HeaderProps {
  */
 export const Header: React.FC<HeaderProps> = ({
   onNewSession,
-  activeModel = 'gemini-3.8-flash',
+  activeModel = 'gemini-3.1-flash-lite',
   isGenerating = false,
 }) => {
+  // 엔진 뱃지 레이블 계산
+  const getModelBadgeLabel = (model: string) => {
+    if (model.includes('3.1-flash-lite')) return '3.1 FLASH-LITE';
+    if (model.includes('3.5-flash-lite')) return '3.5 ULTRA-LITE';
+    if (model.includes('3.8-flash')) return '3.8 QUANTUM';
+    if (model.includes('llama-3.3')) return 'LLAMA 3.3 70B';
+    if (model.includes('llama-3.1')) return 'LLAMA 3.1 8B';
+    if (model.includes('deepseek-r1')) return 'DEEPSEEK R1';
+    return 'CORE ENGINE';
+  };
   return (
     <header className="fixed top-0 left-0 md:left-64 right-0 h-16 bg-[#08090C]/80 backdrop-blur-xl border-b border-white/[0.06] z-40 px-4 md:px-8 select-none">
       <div className="h-full w-full flex items-center justify-between">
@@ -55,7 +65,7 @@ export const Header: React.FC<HeaderProps> = ({
               }`}
             />
             <span className="font-mono text-[10px] text-slate-300 tracking-wider uppercase">
-              {activeModel === 'gemini-3.8-flash' ? 'MK-85 QUANTUM' : 'ULTRA-LITE CORE'}
+              {getModelBadgeLabel(activeModel)}
             </span>
           </div>
 

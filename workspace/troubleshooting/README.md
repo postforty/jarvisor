@@ -15,4 +15,5 @@
 | 02 | [02-material-symbols-font-class-missing.md](./02-material-symbols-font-class-missing.md) | Next.js 16/Tailwind v4 환경 Material Symbols 아이콘 미표시 | 캡처 이미지로 원인 분석 유도 후, 지속 증상에 대해 빌드 번들러의 `@import` 탈락 원인을 역추적하여 `<head>` 직결 `<link>` 방식으로 최종 해결 유도 |
 | 03 | [03-header-new-session-button-unresponsive.md](./03-header-new-session-button-unresponsive.md) | 상단 헤더 `+ NEW SESSION` 버튼 미동작 및 세션 초기화 핸들러 누락 | 캡처 이미지로 문제 버튼 지목 후, 상위 페이지의 상태 끌어올리기(State Lifting) 및 이벤트 바인딩으로 세션 리셋 연동 유도 |
 | 04 | [04-llm-latency-warning-and-model-fallback.md](./04-llm-latency-warning-and-model-fallback.md) | Gemini API 과부하(503)로 인한 응답 지연 시 침묵 방치 | 원인 분석 요청 ➔ 지연 안내 UX 제안 ➔ 경량 모델(초저지연) 전환 선택 인터랙션 구현까지 점진적 스펙 오케스트레이션 |
+| 05 | [05-gemini-model-swap-and-popover-ui.md](./05-gemini-model-swap-and-popover-ui.md) | Gemini 3.8 Flash 응답 지연 및 비직관적 탭 UI | 3.8 응답 상태 진단 요청 ➔ Gemini 3.1 Flash-Lite 고속 엔진 교체 및 이미지 기반 팝오버 드롭다운 UI 개편 지시 |
 

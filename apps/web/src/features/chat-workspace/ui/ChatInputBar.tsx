@@ -1,7 +1,59 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { ModelType } from '@/shared/types';
+
+interface ModelOption {
+  id: ModelType;
+  name: string;
+  shortName: string;
+  description: string;
+  tag: string;
+  color: string;
+}
+
+const MODEL_OPTIONS: ModelOption[] = [
+  {
+    id: 'gemini-3.1-flash-lite',
+    name: '3.1 Flash-Lite',
+    shortName: 'Flash',
+    description: '가장 빠른 답변 제공',
+    tag: 'Google',
+    color: '#4cd7f6',
+  },
+  {
+    id: 'gemini-3.5-flash-lite',
+    name: '3.5 Flash-Lite',
+    shortName: '3.5 Lite',
+    description: '초저지연 일상 질의 응답',
+    tag: 'Google',
+    color: '#ffb95f',
+  },
+  {
+    id: '@cf/meta/llama-3.3-70b-instruct-fp8-fast',
+    name: 'Llama 3.3 (70B)',
+    shortName: 'Llama 3.3',
+    description: '고급 추론 및 사내 RAG',
+    tag: 'Cloudflare',
+    color: '#f48120',
+  },
+  {
+    id: '@cf/deepseek-ai/deepseek-r1-distill-qwen-32b',
+    name: 'DeepSeek R1',
+    shortName: 'R1',
+    description: '복잡한 작업 (Thinking)',
+    tag: 'Cloudflare',
+    color: '#a855f7',
+  },
+  {
+    id: '@cf/meta/llama-3.1-8b-instruct',
+    name: 'Llama 3.1 (8B)',
+    shortName: 'Llama 3.1',
+    description: '초경량 엣지 고속 연산',
+    tag: 'Cloudflare',
+    color: '#ea580c',
+  },
+];
 
 interface ChatInputBarProps {
   /** 텍스트 입력 엘리먼트 참조 */
@@ -17,7 +69,7 @@ interface ChatInputBarProps {
 }
 
 /**
- * 하단 캡슐형 명령 입력 및 모델 스위칭 컨트롤 바 컴포넌트
+ * 하단 캡슐형 명령 입력 및 팝오버 드롭다운 모델 스위칭 컨트롤 바
  */
 export const ChatInputBar: React.FC<ChatInputBarProps> = ({
   inputRef,
@@ -31,6 +83,32 @@ export const ChatInputBar: React.FC<ChatInputBarProps> = ({
   onToggleListening,
 }) => {
   const [inputText, setInputText] = useState('');
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const popoverRef = useRef<HTMLDivElement>(null);
+
+  // 현재 활성 모델 옵션 정보 추출
+  const currentOption =
+    MODEL_OPTIONS.find(
+      (m) =>
+        m.id === modelType ||
+        (m.id === '@cf/meta/llama-3.3-70b-instruct-fp8-fast' &&
+          modelType === '@cf/meta/llama-3.3-70b-instruct')
+    ) || MODEL_OPTIONS[0];
+
+  // 팝오버 외부 클릭 시 닫기 핸들러
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (popoverRef.current && !popoverRef.current.contains(e.target as Node)) {
+        setIsMenuOpen(false);
+      }
+    };
+    if (isMenuOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isMenuOpen]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -52,70 +130,9 @@ export const ChatInputBar: React.FC<ChatInputBarProps> = ({
 
   return (
     <div className="w-full max-w-4xl mx-auto px-4 pb-4 select-none">
-      {/* 상단 컨트롤러: 모델 스위처 & 모드 안내 */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5 px-2 pb-2 text-[11px] font-mono">
-        <div className="flex items-center gap-2 overflow-x-auto py-0.5">
-          <span className="text-slate-400 shrink-0">CORE ENGINE:</span>
-          <div className="inline-flex rounded-lg bg-[#121620] p-0.5 border border-white/10 shrink-0">
-            {/* Google Gemini 모델 2종 */}
-            <button
-              type="button"
-              onClick={() => onChangeModel('gemini-3.8-flash')}
-              className={`px-2 py-1 rounded-md text-[10px] font-semibold transition-all cursor-pointer ${modelType === 'gemini-3.8-flash'
-                  ? 'bg-[#dc2626] text-white shadow-[0_0_8px_#dc2626]'
-                  : 'text-slate-400 hover:text-slate-200'
-                }`}
-            >
-              3.8 Flash
-            </button>
-            <button
-              type="button"
-              onClick={() => onChangeModel('gemini-3.5-flash-lite')}
-              className={`px-2 py-1 rounded-md text-[10px] font-semibold transition-all cursor-pointer ${modelType === 'gemini-3.5-flash-lite'
-                  ? 'bg-[#ffb95f] text-[#472a00] shadow-[0_0_8px_#ffb95f]'
-                  : 'text-slate-400 hover:text-slate-200'
-                }`}
-            >
-              3.5 Lite
-            </button>
-
-            {/* Cloudflare Workers AI 모델 3종 */}
-            <button
-              type="button"
-              onClick={() => onChangeModel('@cf/meta/llama-3.3-70b-instruct-fp8-fast')}
-              className={`px-2 py-1 rounded-md text-[10px] font-semibold transition-all cursor-pointer ${
-                modelType === '@cf/meta/llama-3.3-70b-instruct-fp8-fast' ||
-                modelType === '@cf/meta/llama-3.3-70b-instruct'
-                  ? 'bg-[#f48120] text-white shadow-[0_0_8px_#f48120]'
-                  : 'text-slate-400 hover:text-slate-200'
-              }`}
-            >
-              Llama 3.3
-            </button>
-            <button
-              type="button"
-              onClick={() => onChangeModel('@cf/meta/llama-3.1-8b-instruct')}
-              className={`px-2 py-1 rounded-md text-[10px] font-semibold transition-all cursor-pointer ${modelType === '@cf/meta/llama-3.1-8b-instruct'
-                  ? 'bg-[#ea580c] text-white shadow-[0_0_8px_#ea580c]'
-                  : 'text-slate-400 hover:text-slate-200'
-                }`}
-            >
-              Llama 3.1
-            </button>
-            <button
-              type="button"
-              onClick={() => onChangeModel('@cf/deepseek-ai/deepseek-r1-distill-qwen-32b')}
-              className={`px-2 py-1 rounded-md text-[10px] font-semibold transition-all cursor-pointer ${modelType === '@cf/deepseek-ai/deepseek-r1-distill-qwen-32b'
-                  ? 'bg-[#4cd7f6] text-[#003640] shadow-[0_0_8px_#4cd7f6]'
-                  : 'text-slate-400 hover:text-slate-200'
-                }`}
-            >
-              DeepSeek R1
-            </button>
-          </div>
-        </div>
-
-        {isGenerating && (
+      {/* 상단 컨트롤러: 실시간 텔레메트리 상태 알림 */}
+      <div className="flex items-center justify-between gap-2 px-3 pb-2 text-[11px] font-mono">
+        {isGenerating ? (
           isDelayed ? (
             <div className="flex items-center gap-1.5 text-[#ffb95f] animate-pulse">
               <span className="w-1.5 h-1.5 rounded-full bg-[#ffb95f] shadow-[0_0_6px_#ffb95f]" />
@@ -123,10 +140,15 @@ export const ChatInputBar: React.FC<ChatInputBarProps> = ({
             </div>
           ) : (
             <div className="flex items-center gap-1.5 text-[#4cd7f6] animate-pulse">
-              <span className="w-1.5 h-1.5 rounded-full bg-[#4cd7f6]" />
+              <span className="w-1.5 h-1.5 rounded-full bg-[#4cd7f6] shadow-[0_0_6px_#4cd7f6]" />
               <span>스트리밍 답변 생성 중 (Barge-in 대기)</span>
             </div>
           )
+        ) : (
+          <div className="flex items-center gap-1.5 text-slate-500">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500/80" />
+            <span>SYS::STANDBY (RAG 지식 베이스 활성)</span>
+          </div>
         )}
       </div>
 
@@ -159,16 +181,98 @@ export const ChatInputBar: React.FC<ChatInputBarProps> = ({
           className="flex-1 bg-transparent text-slate-100 placeholder:text-slate-500 font-sans text-sm focus:outline-none min-w-0 tracking-wide"
         />
 
-        {/* 액션 버튼 그룹 */}
+        {/* 액션 버튼 그룹: 모델 선택 드롭다운 -> 마이크 -> 실행 버튼 */}
         <div className="flex items-center gap-1.5">
-          {/* 음성 인식 마이크 토글 */}
+          {/* 1. 모델 드롭다운 셀렉트 박스 (마이크 왼쪽 배치) */}
+          <div className="relative" ref={popoverRef}>
+            <button
+              type="button"
+              onClick={() => setIsMenuOpen(!isMenuOpen)}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#181d2a] hover:bg-[#22293b] text-slate-200 hover:text-white border border-white/10 hover:border-white/20 shadow-sm active:scale-95 transition-all cursor-pointer font-sans"
+              aria-expanded={isMenuOpen}
+              aria-label="코어 엔진 모델 선택"
+            >
+              <span className="font-['Space_Grotesk'] text-xs font-semibold tracking-wide text-slate-200 whitespace-nowrap">
+                {currentOption.shortName}
+              </span>
+              <span
+                className={`material-symbols-outlined text-[16px] text-slate-400 transition-transform duration-200 ${
+                  isMenuOpen ? 'rotate-180' : ''
+                }`}
+              >
+                keyboard_arrow_down
+              </span>
+            </button>
+
+            {/* 위로 열리는 팝오버 드롭다운 메뉴 (사고 수준 제거) */}
+            {isMenuOpen && (
+              <div className="absolute bottom-full mb-3 right-0 z-50 w-64 bg-[#0f131d]/95 backdrop-blur-xl border border-white/15 rounded-2xl shadow-[0_16px_40px_rgba(0,0,0,0.85)] p-1.5 flex flex-col select-none animate-in fade-in zoom-in-95 duration-150">
+                {MODEL_OPTIONS.map((opt) => {
+                  const isSelected =
+                    modelType === opt.id ||
+                    (opt.id === '@cf/meta/llama-3.3-70b-instruct-fp8-fast' &&
+                      modelType === '@cf/meta/llama-3.3-70b-instruct');
+
+                  return (
+                    <button
+                      key={opt.id}
+                      type="button"
+                      onClick={() => {
+                        onChangeModel(opt.id);
+                        setIsMenuOpen(false);
+                      }}
+                      className={`w-full text-left px-2.5 py-2 rounded-xl transition-all cursor-pointer flex items-start gap-2 ${
+                        isSelected
+                          ? 'bg-white/[0.08] border border-white/15 shadow-[inset_0_0_10px_rgba(255,255,255,0.03)]'
+                          : 'hover:bg-white/[0.05] border border-transparent'
+                      }`}
+                    >
+                      {/* 체크마크 공간 */}
+                      <div className="w-5 h-5 flex items-center justify-center shrink-0 mt-0.5">
+                        {isSelected ? (
+                          <span className="material-symbols-outlined text-[16px] text-slate-100 font-bold">
+                            check
+                          </span>
+                        ) : null}
+                      </div>
+
+                      {/* 모델명 & 부제목 */}
+                      <div className="flex flex-col min-w-0 flex-1">
+                        <div className="flex items-center justify-between gap-1">
+                          <span className="font-['Space_Grotesk'] text-[13px] font-semibold text-slate-100 leading-tight">
+                            {opt.name}
+                          </span>
+                          <span
+                            className="font-mono text-[8px] px-1.5 py-0.2 rounded font-semibold shrink-0"
+                            style={{
+                              backgroundColor: `${opt.color}20`,
+                              color: opt.color,
+                              border: `1px solid ${opt.color}35`,
+                            }}
+                          >
+                            {opt.tag}
+                          </span>
+                        </div>
+                        <p className="font-sans text-[11px] text-slate-400 leading-tight mt-0.5">
+                          {opt.description}
+                        </p>
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+
+          {/* 2. 음성 인식 마이크 토글 */}
           <button
             type="button"
             onClick={onToggleListening}
-            className={`w-9 h-9 rounded-full flex items-center justify-center transition-all cursor-pointer ${isListening
+            className={`w-9 h-9 rounded-full flex items-center justify-center transition-all cursor-pointer ${
+              isListening
                 ? 'bg-[#dc2626] text-white shadow-[0_0_12px_#dc2626] animate-pulse'
                 : 'text-slate-400 hover:text-[#ffb95f] hover:bg-white/[0.04]'
-              }`}
+            }`}
             title="음성 인식 활성화"
           >
             <span className="material-symbols-outlined text-[19px]">mic</span>

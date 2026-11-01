@@ -164,25 +164,26 @@ export const SettingsPanel: React.FC = () => {
 
         {/* 5대 모델 엔진 라디오 카드 그리드 */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-          {/* 1. Google Gemini 3.8 Flash */}
+          {/* 1. Google Gemini 3.1 Flash-Lite */}
           <button
             type="button"
-            onClick={() => updateSetting('defaultModel', 'gemini-3.8-flash')}
-            className={`text-left p-4 rounded-xl border transition-all cursor-pointer flex flex-col gap-1.5 ${settings.defaultModel === 'gemini-3.8-flash'
+            onClick={() => updateSetting('defaultModel', 'gemini-3.1-flash-lite')}
+            className={`text-left p-4 rounded-xl border transition-all cursor-pointer flex flex-col gap-1.5 ${
+              settings.defaultModel === 'gemini-3.1-flash-lite'
                 ? 'bg-[#1c1f2a] border-[#dc2626]/50 shadow-[0_0_16px_rgba(220,38,38,0.2)]'
                 : 'bg-[#0a0e18]/80 hover:bg-[#171b26] border-white/[0.06]'
-              }`}
+            }`}
           >
             <div className="flex items-center justify-between">
               <span className="font-['Space_Grotesk'] text-xs font-bold text-slate-100">
-                MK-85 Quantum (3.8 Flash)
+                MK-85 Quantum (3.1 Flash-Lite)
               </span>
               <span className="font-mono text-[10px] px-2 py-0.5 rounded bg-[#dc2626]/20 text-[#ffb4ab] border border-[#dc2626]/40">
                 Google
               </span>
             </div>
             <p className="font-sans text-[11px] text-slate-400">
-              정밀 분석, 다단계 인과 추론, 아키텍처 코드 검토 및 복합 문제 해결 모드
+              초고속 응답, 정밀 인과 추론, 아키텍처 및 사내 RAG 문서 분석 최적화 모드
             </p>
           </button>
 

@@ -16,7 +16,7 @@ const DELAY_THRESHOLD_MS = 4000;
  */
 export function useChatStream({
   initialPersona = 'classic',
-  initialModel = 'gemini-3.8-flash',
+  initialModel = 'gemini-3.1-flash-lite',
 }: UseChatStreamOptions = {}) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [isGenerating, setIsGenerating] = useState<boolean>(false);

@@ -16,7 +16,7 @@ const DEFAULT_SETTINGS: SystemSettings = {
   persona: 'classic',
   wakeWordEnabled: true,
   bargeInEnabled: true,
-  defaultModel: 'gemini-3.8-flash',
+  defaultModel: 'gemini-3.1-flash-lite',
   autonomyLevel: 3,
   e2eeEnabled: true,
 };

@@ -6,8 +6,9 @@ from pydantic import BaseModel, Field
 class ModelType(str, Enum):
     """지원하는 LLM 모델 엔진 종류"""
     # Google Gemini 모델
-    DEFAULT = "gemini-3.8-flash"  # 표준 지능 모드 (고난도 추론, 코드 분석)
+    DEFAULT = "gemini-3.1-flash-lite"  # 표준 고속 모드 (초저지연, 안정적 고속 추론)
     FAST = "gemini-3.5-flash-lite"  # 초저지연 빠른 응답 모드 (일상 질의, 브리핑)
+    LEGACY_FLASH = "gemini-3.8-flash"  # 구형 3.8 모델 호환용 식별자
 
     # Cloudflare Workers AI 모델
     CF_LLAMA_3_3 = "@cf/meta/llama-3.3-70b-instruct-fp8-fast"  # 최신 플래그십 70B 고속 모델

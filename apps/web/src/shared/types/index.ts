@@ -3,12 +3,13 @@
  */
 
 export type ModelType =
-  | 'gemini-3.8-flash'
+  | 'gemini-3.1-flash-lite'
   | 'gemini-3.5-flash-lite'
   | '@cf/meta/llama-3.3-70b-instruct-fp8-fast'
   | '@cf/meta/llama-3.3-70b-instruct'
   | '@cf/meta/llama-3.1-8b-instruct'
-  | '@cf/deepseek-ai/deepseek-r1-distill-qwen-32b';
+  | '@cf/deepseek-ai/deepseek-r1-distill-qwen-32b'
+  | 'gemini-3.8-flash';
 
 export type PersonaType = 'classic' | 'brief' | 'tactical';
 
