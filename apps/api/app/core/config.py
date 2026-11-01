@@ -30,6 +30,10 @@ class Settings(BaseSettings):
     # RAG 문서 및 로컬 FAISS 설정
     PDF_DOCUMENT_PATH: str = "../../workspace/documents/hr_regulations.pdf"
     FAISS_INDEX_DIR: str = "./storage/faiss_hr"
+    HR_PDF_PATH: str = "../../workspace/documents/hr_regulations.pdf"
+    FAISS_HR_DIR: str = "./storage/faiss_hr"
+    SECOPS_PDF_PATH: str = "../../workspace/documents/secops_infra_sop.pdf"
+    FAISS_SECOPS_DIR: str = "./storage/faiss_secops"
     EMBEDDING_MODEL: str = "models/gemini-embedding-2"
     EMBEDDING_DIMENSION: int = 768
 

@@ -8,7 +8,25 @@ from langchain_cloudflare.chat_models import ChatCloudflareWorkersAI
 from app.core.config import settings
 from app.schemas.chat import ModelType, PersonaType
 from app.services.rag_service import get_rag_service
-from app.services.tools import search_hr_regulations
+from app.services.tools import search_hr_regulations, search_secops_sop
+
+# 사용 가능한 모든 RAG 도구 레지스트리
+AVAILABLE_TOOLS = [search_hr_regulations, search_secops_sop]
+TOOLS_BY_NAME = {t.name: t for t in AVAILABLE_TOOLS}
+
+
+def detect_query_domain(message: str) -> str:
+    """사용자 질의 키워드를 기반으로 적합한 RAG 도메인(secops 또는 hr) 판별"""
+    secops_keywords = [
+        "사내망", "kv-net", "kvnet", "세션", "타임아웃", "단말", "동일 ip",
+        "에러 코드", "kv-err", "obsidian", "흑요석", "장애 등급", "지연율",
+        "sop", "인프라", "보안"
+    ]
+    lowered = message.lower()
+    for kw in secops_keywords:
+        if kw in lowered:
+            return "secops"
+    return "hr"
 
 # 페르소나별 시스템 프롬프트 정의
 SYSTEM_PROMPTS = {
@@ -109,14 +127,17 @@ async def stream_chat_response(
         # -> 사전 RAG 검색 후 시스템 컨텍스트에 주입 (Pre-retrieval Context Injection)
         # -------------------------------------------------------------
         if not supports_tools:
-            rag_service = get_rag_service()
+            # 질문 분석을 통한 도메인(secops / hr) 라우팅
+            domain = detect_query_domain(message)
+            rag_service = get_rag_service(domain)
             rag_context = rag_service.search_formatted(message, k=3)
 
+            domain_label = "인프라 및 보안 절차서" if domain == "secops" else "사내 인사 규정"
             augmented_system_prompt = (
                 f"{system_instruction}\n\n"
-                f"[사내 인사 규정 참고 자료 (반드시 아래 조항의 문구와 수치를 절대적인 근거로 삼아 답변하십시오)]\n"
+                f"[{domain_label} 참고 자료 (반드시 아래 조항의 문구와 수치를 절대적인 근거로 삼아 답변하십시오)]\n"
                 f"{rag_context}\n\n"
-                f"규정에 명시된 조항 번호와 예외 규칙, 감액 및 합산 기준을 명확히 제시하십시오."
+                f"규정 및 절차서에 명시된 조항 번호와 예외 규칙, 감액 및 합산 기준을 명확히 제시하십시오."
             )
 
             messages = [
@@ -148,19 +169,22 @@ async def stream_chat_response(
             HumanMessage(content=message),
         ]
 
-        model_with_tools = model.bind_tools([search_hr_regulations])
+        # 인사 규정 및 SecOps 절차서 도구를 복수로 바인딩
+        model_with_tools = model.bind_tools(AVAILABLE_TOOLS)
         initial_response = await model_with_tools.ainvoke(messages)
 
         # 도구 호출이 발생한 경우: 도구 실행 후 최종 스트리밍
         if initial_response.tool_calls:
             tool_messages = []
             for tool_call in initial_response.tool_calls:
-                if tool_call.get("name") == search_hr_regulations.name:
-                    tool_result = search_hr_regulations.invoke(tool_call.get("args", {}))
+                call_name = tool_call.get("name")
+                tool_instance = TOOLS_BY_NAME.get(call_name)
+                if tool_instance:
+                    tool_result = tool_instance.invoke(tool_call.get("args", {}))
                     tool_messages.append(
                         ToolMessage(
                             content=str(tool_result),
-                            tool_call_id=tool_call.get("id", "call_1"),
+                            tool_call_id=tool_call.get("id", f"call_{call_name}"),
                         )
                     )
 

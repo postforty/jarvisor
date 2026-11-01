@@ -12,32 +12,38 @@ from langchain_google_genai import GoogleGenerativeAIEmbeddings
 from app.core.config import settings
 
 
+def _resolve_document_path(filename: str) -> Path:
+    """모노레포 루트 및 상대 경로를 순회하여 workspace/documents 내 대상 문서 경로 탐색"""
+    project_root = Path(__file__).resolve().parent.parent.parent.parent.parent
+    candidate = project_root / "workspace" / "documents" / filename
+    if not candidate.exists():
+        for alt in [
+            Path("workspace/documents") / filename,
+            Path("../workspace/documents") / filename,
+            Path("../../workspace/documents") / filename,
+        ]:
+            if alt.exists():
+                return alt.resolve()
+    return candidate
+
+
 class RAGService:
-    """로컬 FAISS 기반 사내 인사규정(hr_regulations.pdf) 전용 인덱싱 및 유사도 검색 서비스"""
+    """로컬 FAISS 기반 직무별(인사 규정, 인프라 보안 SOP 등) 인덱싱 및 유사도 검색 서비스"""
 
     def __init__(
         self,
         pdf_path: Optional[str] = None,
         storage_dir: Optional[str] = None,
         embeddings: Optional[Embeddings] = None,
+        domain_label: str = "사내 규정",
     ):
-        # 1. 인사규정 PDF 파일 경로 설정 (기본값: workspace/documents/hr_regulations.pdf)
+        self.domain_label = domain_label
+
+        # 1. 대상 PDF 파일 경로 설정
         if pdf_path:
             self.pdf_path = Path(pdf_path)
         else:
-            # apps/api/app/services 기준 5단계 상위 디렉토리가 모노레포 루트
-            project_root = Path(__file__).resolve().parent.parent.parent.parent.parent
-            candidate_path = project_root / "workspace" / "documents" / "hr_regulations.pdf"
-            if not candidate_path.exists():
-                for alt in [
-                    Path("workspace/documents/hr_regulations.pdf"),
-                    Path("../workspace/documents/hr_regulations.pdf"),
-                    Path("../../workspace/documents/hr_regulations.pdf"),
-                ]:
-                    if alt.exists():
-                        candidate_path = alt.resolve()
-                        break
-            self.pdf_path = candidate_path
+            self.pdf_path = _resolve_document_path("hr_regulations.pdf")
 
         # 2. FAISS 인덱스 로컬 캐시 디렉토리 설정
         if storage_dir:
@@ -59,11 +65,11 @@ class RAGService:
         self._vectorstore: Optional[FAISS] = None
 
     def load_and_chunk_documents(self) -> List[Document]:
-        """오직 hr_regulations.pdf 단일 PDF 문서만 파싱하여 조항 단위로 청킹"""
+        """대상 단일 PDF 문서만 파싱하여 조항 및 절차 단위로 청킹"""
         raw_documents: List[Document] = []
 
         if not self.pdf_path.exists():
-            print(f"[RAGService] 오류: 인사규정 PDF 파일을 찾을 수 없습니다: {self.pdf_path}")
+            print(f"[RAGService] 오류: 문서 PDF 파일을 찾을 수 없습니다: {self.pdf_path}")
             return raw_documents
 
         # PyPDFLoader를 통해 PDF 페이지만 전용 로드
@@ -74,11 +80,11 @@ class RAGService:
             print(f"[RAGService] PDF 파일 로드 실패: {e}")
             return []
 
-        # 법률/규정 문서 특성을 고려한 조항(제N조) 및 표 맥락 보존 분할기
+        # 규정 조항(제N조) 및 SOP 절차(###, ##, 절, 항) 맥락 보존 분할기
         text_splitter = RecursiveCharacterTextSplitter(
             chunk_size=700,
             chunk_overlap=150,
-            separators=["\n제", "\n\n", "\n", " "],
+            separators=["\n제", "\n### ", "\n## ", "\n# ", "\n\n", "\n", " "],
         )
 
         return text_splitter.split_documents(raw_documents)
@@ -109,9 +115,9 @@ class RAGService:
                     allow_dangerous_deserialization=True,
                 )
                 # 빈 더미 캐시인지 검증
-                sample_docs = loaded.similarity_search("인사규정", k=1)
-                if sample_docs and "사내 인사규정 문서가 비어 있습니다" in sample_docs[0].page_content:
-                    print("[RAGService] 이전 더미 캐시 감지, 정식 PDF로 재생성 진행")
+                sample_docs = loaded.similarity_search("규정 절차", k=1)
+                if sample_docs and "문서가 비어 있습니다" in sample_docs[0].page_content:
+                    print(f"[RAGService] 이전 더미 캐시 감지, 정식 PDF({self.pdf_path.name})로 재생성 진행")
                     return self.build_index()
 
                 self._vectorstore = loaded
@@ -122,7 +128,7 @@ class RAGService:
         return self.build_index()
 
     def search(self, query: str, k: int = 3) -> List[Document]:
-        """쿼리와 가장 유사한 k개의 규정 조항 문서 청크 검색"""
+        """쿼리와 가장 유사한 k개의 규정/절차 조항 문서 청크 검색"""
         vectorstore = self.get_vectorstore()
         return vectorstore.similarity_search(query, k=k)
 
@@ -130,26 +136,45 @@ class RAGService:
         """LLM이 즉시 파싱 및 조항 번호를 인용할 수 있는 포맷팅된 검색 결과 반환"""
         docs = self.search(query, k=k)
         if not docs:
-            return "일치하는 사내 규정 및 조항을 찾을 수 없습니다."
+            return f"일치하는 {self.domain_label} 조항 및 절차를 찾을 수 없습니다."
 
         formatted_chunks = []
         for i, doc in enumerate(docs, 1):
-            source = doc.metadata.get("source", "hr_regulations.pdf")
+            source = Path(doc.metadata.get("source", self.pdf_path.name)).name
             page = doc.metadata.get("page", 0) + 1  # 1-indexed 페이지
             formatted_chunks.append(
-                f"[문서 검색 결과 #{i}] (출처: {source}, 페이지: {page}P)\n{doc.page_content.strip()}"
+                f"[문서 검색 결과 #{i}] ({self.domain_label} | 출처: {source}, 페이지: {page}P)\n{doc.page_content.strip()}"
             )
 
         return "\n\n".join(formatted_chunks)
 
 
-# 전역 RAGService 싱글톤 인스턴스 관리
-_default_rag_service: Optional[RAGService] = None
+# 도메인별 RAGService 싱글톤 인스턴스 레지스트리
+_rag_services: dict[str, RAGService] = {}
 
 
-def get_rag_service() -> RAGService:
-    """RAGService 전역 싱글톤 인스턴스 반환 함수"""
-    global _default_rag_service
-    if _default_rag_service is None:
-        _default_rag_service = RAGService()
-    return _default_rag_service
+def get_rag_service(domain: str = "hr") -> RAGService:
+    """도메인별(hr, secops 등) RAGService 싱글톤 인스턴스 반환 팩토리 함수"""
+    global _rag_services
+    domain_key = domain.lower().strip()
+
+    if domain_key not in _rag_services:
+        api_root = Path(__file__).resolve().parent.parent.parent
+        if domain_key == "secops":
+            secops_pdf = _resolve_document_path("secops_infra_sop.pdf")
+            secops_storage = api_root / "storage" / "faiss_secops"
+            _rag_services[domain_key] = RAGService(
+                pdf_path=str(secops_pdf),
+                storage_dir=str(secops_storage),
+                domain_label="인프라 및 보안 절차서",
+            )
+        else:  # 기본값 "hr"
+            hr_pdf = _resolve_document_path("hr_regulations.pdf")
+            hr_storage = api_root / "storage" / "faiss_hr"
+            _rag_services[domain_key] = RAGService(
+                pdf_path=str(hr_pdf),
+                storage_dir=str(hr_storage),
+                domain_label="사내 인사 규정",
+            )
+
+    return _rag_services[domain_key]
