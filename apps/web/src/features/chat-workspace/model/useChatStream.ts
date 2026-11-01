@@ -26,6 +26,8 @@ export function useChatStream({
   const [isDelayed, setIsDelayed] = useState<boolean>(false);
   // 세션 초기화(리셋) 횟수 추적 상태 (인풋창 자동 포커스 트리거용)
   const [resetCount, setResetCount] = useState<number>(0);
+  // 이전 세션 불러오기 진행 중 여부
+  const [isLoadingSession, setIsLoadingSession] = useState<boolean>(false);
 
   // 진행 중인 스트리밍 요청 AbortController 참조
   const abortControllerRef = useRef<AbortController | null>(null);
@@ -318,10 +320,69 @@ export function useChatStream({
     setResetCount((prev) => prev + 1);
   }, [stopGenerating]);
 
+  /**
+   * 기존 대화 세션 불러오기 (히스토리에서 '이어서 대화' 진입 시)
+   */
+  const loadSession = useCallback(
+    async (targetSessionId: string) => {
+      if (!targetSessionId) return;
+
+      stopGenerating();
+      setIsLoadingSession(true);
+
+      try {
+        const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+        const res = await fetch(`${apiUrl}/api/v1/sessions/${targetSessionId}`);
+        if (!res.ok) {
+          throw new Error('대화 세션을 불러오지 못했습니다.');
+        }
+        const data = await res.json();
+
+        setSessionId(data.id);
+        if (data.model_name) {
+          setModelType(data.model_name as ModelType);
+        }
+
+        const loadedMessages: ChatMessage[] = (data.messages || []).map(
+          (m: {
+            id: string;
+            role: 'user' | 'assistant' | 'system';
+            content: string;
+            created_at: string;
+            model_name?: string | null;
+          }) => ({
+            id: m.id,
+            role: m.role,
+            content: m.content,
+            timestamp: new Date(m.created_at).toLocaleTimeString('ko-KR', {
+              hour: '2-digit',
+              minute: '2-digit',
+            }),
+            model: (m.model_name as ModelType) || undefined,
+          })
+        );
+
+        setMessages(loadedMessages);
+
+        // 마지막 사용자 메시지 추적 갱신 (모델 전환 재시도 대비)
+        const lastUser = [...loadedMessages].reverse().find((m) => m.role === 'user');
+        if (lastUser) {
+          lastUserMessageRef.current = lastUser.content;
+        }
+      } catch (err) {
+        console.error('세션 복원 실패:', err);
+      } finally {
+        setIsLoadingSession(false);
+      }
+    },
+    [stopGenerating]
+  );
+
   return {
     messages,
     isGenerating,
     isDelayed,
+    isLoadingSession,
     sessionId,
     modelType,
     setModelType,
@@ -332,6 +393,7 @@ export function useChatStream({
     retryWithAlternativeModel,
     dismissDelayNotice,
     clearSession,
+    loadSession,
     resetCount,
   };
 }

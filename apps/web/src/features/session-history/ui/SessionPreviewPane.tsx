@@ -49,7 +49,7 @@ export const SessionPreviewPane: React.FC<SessionPreviewPaneProps> = ({
   };
 
   return (
-    <aside className="p-6 rounded-2xl bg-[#0e121a]/90 backdrop-blur-xl border border-white/[0.08] shadow-[0_4px_24px_rgba(0,0,0,0.5)] flex flex-col gap-6 select-none sticky top-20">
+    <aside className="p-6 rounded-2xl bg-[#0e121a]/90 backdrop-blur-xl border border-white/[0.08] shadow-[0_4px_24px_rgba(0,0,0,0.5)] flex flex-col gap-6 select-none max-h-[calc(100vh-6rem)] overflow-y-auto">
       {/* 상단 세션 코드 & 모델 배지 */}
       <div className="flex items-center justify-between border-b border-white/[0.06] pb-3">
         <span className="font-mono text-xs text-[#4cd7f6] font-semibold">

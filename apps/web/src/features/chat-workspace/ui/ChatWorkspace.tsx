@@ -26,6 +26,7 @@ export const ChatWorkspace: React.FC<ChatWorkspaceProps> = ({
     messages,
     isGenerating,
     isDelayed,
+    isLoadingSession,
     modelType,
     setModelType,
     sendMessage,
@@ -56,7 +57,15 @@ export const ChatWorkspace: React.FC<ChatWorkspaceProps> = ({
 
       {/* 중앙 메인 컨텐츠 영역 */}
       <div className="flex-1 w-full flex flex-col justify-center items-center z-10 overflow-y-auto">
-        {!hasMessages ? (
+        {isLoadingSession ? (
+          /* 세션 복원 로딩 상태 */
+          <div className="flex flex-col items-center justify-center gap-3">
+            <div className="w-8 h-8 rounded-full border-2 border-[#dc2626] border-t-transparent animate-spin" />
+            <span className="font-mono text-xs text-slate-400">
+              세션 텔레메트리 복원 중...
+            </span>
+          </div>
+        ) : !hasMessages ? (
           /* 대기 상태: 대형 아크 리액터 코어 + 타이틀 */
           <div className="w-full max-w-4xl mx-auto px-4 py-8 flex flex-col items-center">
             {/* 상단 텔레메트리 뱃지 */}

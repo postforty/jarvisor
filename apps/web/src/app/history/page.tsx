@@ -61,8 +61,8 @@ export default function HistoryPage() {
               />
             </div>
 
-            {/* 우측 5-컬럼: 선택된 세션 상세 프리뷰 */}
-            <div className="lg:col-span-5">
+            {/* 우측 5-컬럼: 선택된 세션 상세 프리뷰 (데스크톱 스크롤 시 스티키 고정) */}
+            <div className="lg:col-span-5 lg:sticky lg:top-20">
               <SessionPreviewPane
                 sessionDetail={selectedDetail}
                 onDeleteSession={deleteSession}
